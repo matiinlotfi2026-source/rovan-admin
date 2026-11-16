@@ -9,4 +9,4 @@ binding = "ASSETS"
 [[d1_databases]]
 binding = "DB"
 database_name = "rovan-db"
-database_id = "PASTE_DATABASE_ID_HERE"
+database_id = "81f9a1a5-653a-45b4-b63a-4eb2b23882a3"
