@@ -1,0 +1,23 @@
+<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>مدیریت ROVAN</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#292a2c;color:#f1f0ed;font:15px Tahoma,Arial,sans-serif;line-height:1.8}.wrap{max-width:950px;margin:auto;padding:20px}.box{background:#353638;border:1px solid #555;padding:18px;border-radius:12px;margin:16px 0}h1,h2{color:#e58a50}input,textarea,select{width:100%;padding:12px;margin:6px 0 12px;border:1px solid #777;border-radius:8px;background:#222;color:white;font:inherit}button{padding:10px 16px;border:0;border-radius:8px;background:#c76535;color:white;font:inherit;cursor:pointer;margin:4px}.secondary{background:#555}.danger{background:#963d31}.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.item{border-top:1px solid #555;padding:12px 0}.hidden{display:none}@media(max-width:600px){.grid{grid-template-columns:1fr}}
+</style></head><body><main class="wrap"><h1>ROVAN · پنل مدیریت</h1>
+<section id="login" class="box"><h2>ورود مدیر</h2><label>نام کاربری</label><input id="username" value="admin" autocomplete="username"><label>رمز عبور</label><input id="password" type="password" autocomplete="current-password"><button onclick="login()">ورود</button><p id="loginMsg"></p></section>
+<div id="app" class="hidden">
+<div class="box"><button onclick="showTab('products')">محصولات</button><button onclick="showTab('orders')">سفارش‌ها</button><button class="secondary" onclick="logout()">خروج</button></div>
+<section id="products" class="box"><h2>افزودن محصول</h2><div class="grid"><div>نام محصول<input id="pname"></div><div>قیمت (عدد)<input id="price" type="number" min="0"></div><div>موجودی<input id="stock" type="number" min="0"></div><div>آدرس عکس<input id="image"></div></div><label>توضیحات</label><textarea id="desc"></textarea><button onclick="addProduct()">ثبت محصول</button><h2>فهرست محصولات</h2><div id="productList"></div></section>
+<section id="orders" class="box hidden"><h2>سفارش‌ها</h2><div id="orderList"></div></section>
+</div></main>
+<script>
+const $=id=>document.getElementById(id);
+async function api(path,opts={}){const r=await fetch('/api/'+path,{...opts,headers:{'content-type':'application/json',...(opts.headers||{})}});let d=await r.json().catch(()=>({}));if(!r.ok)throw Error(d.error||'خطا');return d}
+async function login(){try{await api('login',{method:'POST',body:JSON.stringify({username:$('username').value,password:$('password').value})});$('login').classList.add('hidden');$('app').classList.remove('hidden');await loadProducts()}catch(e){$('loginMsg').textContent=e.message}}
+async function logout(){await api('logout',{method:'POST'});location.reload()}
+function showTab(t){$('products').classList.toggle('hidden',t!=='products');$('orders').classList.toggle('hidden',t!=='orders');if(t==='orders')loadOrders()}
+async function addProduct(){try{await api('products',{method:'POST',body:JSON.stringify({name:$('pname').value,price:$('price').value,stock:$('stock').value,image_url:$('image').value,description:$('desc').value})});['pname','price','stock','image','desc'].forEach(x=>$(x).value='');await loadProducts();alert('محصول ثبت شد.')}catch(e){alert(e.message)}}
+async function loadProducts(){try{const a=await api('products');$('productList').innerHTML=a.map(p=>`<div class="item"><b>${esc(p.name)}</b> — قیمت: ${p.price} — موجودی: ${p.stock}<br>${esc(p.description||'')}<br><button class="danger" onclick="delProduct(${p.id})">حذف</button></div>`).join('')||'هنوز محصولی ثبت نشده است.'}catch(e){$('productList').textContent=e.message}}
+async function delProduct(id){if(confirm('این محصول حذف شود؟')){await api('products/'+id,{method:'DELETE'});loadProducts()}}
+async function loadOrders(){try{const a=await api('orders');$('orderList').innerHTML=a.map(o=>`<div class="item"><b>سفارش #${o.id}</b> · ${esc(o.customer_name)} · ${esc(o.phone)}<br>کسب‌وکار: ${esc(o.business_name||'—')}<br>اقلام: ${esc(o.items)}<br>مبلغ: ${o.total_price}<br>وضعیت: <select id="s${o.id}"><option value="new">جدید</option><option value="processing">در حال بررسی</option><option value="done">تکمیل</option><option value="cancelled">لغو</option></select><button onclick="saveStatus(${o.id})">ذخیره وضعیت</button></div>`).join('')||'هنوز سفارشی ثبت نشده است.';a.forEach(o=>$('s'+o.id).value=o.status)}catch(e){$('orderList').textContent=e.message}}
+async function saveStatus(id){await api('orders/'+id,{method:'PATCH',body:JSON.stringify({status:$('s'+id).value})});alert('وضعیت ذخیره شد.')}
+function esc(s=''){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+</script></body></html>
