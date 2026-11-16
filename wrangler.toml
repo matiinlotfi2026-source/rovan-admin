@@ -1,4 +1,4 @@
-name = "rovan-coffee-shop-2026"
+name = "rovan-admin"
 main = "worker.js"
 compatibility_date = "2026-11-15"
 
